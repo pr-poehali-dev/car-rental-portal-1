@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Catalog from "./pages/Catalog";
 import CarPage from "./pages/CarPage";
+import ProfileBookings from "./pages/ProfileBookings";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminCars from "./pages/admin/AdminCars";
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/catalog" element={<Catalog />} />
           <Route path="/cars/:id" element={<CarPage />} />
+          <Route path="/profile/bookings" element={<ProfileBookings />} />
           
           {/* Открытая страница входа */}
           <Route path="/admin/login" element={<AdminLogin />} />
