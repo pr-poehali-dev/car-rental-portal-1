@@ -1,30 +1,9 @@
 
-import { toast } from "@/components/ui/use-toast";
-
-// Базовый URL API
-const API_URL = import.meta.env.VITE_API_URL || 'https://api.autopro.ru/v1';
-
-// Интерфейсы для API
-export interface ApiResponse<T> {
-  data: T;
-  success: boolean;
-  message?: string;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-// Общие типы данных
+// Типы данных для API
 export interface Car {
   id: string;
   name: string;
   image: string;
-  images?: string[];
   price: number;
   category: string;
   seats: number;
@@ -33,19 +12,20 @@ export interface Car {
   year: number;
   description: string;
   features: string[];
-  additionalServices?: AdditionalService[];
-  rating?: number;
-  reviews?: number;
-  status: 'available' | 'reserved' | 'maintenance';
+  status: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface AdditionalService {
+export interface User {
   id: string;
-  name: string;
-  price: number;
-  description: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  role: "user" | "admin";
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Booking {
@@ -54,310 +34,120 @@ export interface Booking {
   userId: string;
   startDate: string;
   endDate: string;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  status: string;
   totalPrice: number;
   insurance: boolean;
-  additionalServices: string[]; // IDs дополнительных услуг
+  additionalServices: string[];
   createdAt: string;
   updatedAt: string;
   car?: Car;
-  user?: User;
 }
 
-export interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-  role: 'user' | 'admin';
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface AuthResponse {
-  user: User;
-  token: string;
-}
-
-// Параметры для фильтрации
-export interface FilterParams {
+// Типы параметров для API
+export interface ApiParams {
   page?: number;
   limit?: number;
+  sort?: string;
+  order?: 'asc' | 'desc';
   search?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  category?: string[];
-  seats?: number[];
-  transmission?: string[];
-  sortBy?: string;
-  sortDirection?: 'asc' | 'desc';
+  status?: string;
+  category?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  features?: string[];
+  priceMin?: number;
+  priceMax?: number;
+  timeRange?: string;
 }
-
-// Вспомогательная функция для обработки ошибок
-const handleApiError = (error: any): never => {
-  console.error('API Error:', error);
-  const message = error.response?.data?.message || 'Произошла ошибка при обращении к серверу';
-  toast({
-    title: 'Ошибка',
-    description: message,
-    variant: 'destructive',
-  });
-  throw error;
-};
-
-// Функция для формирования параметров запроса
-const createQueryString = (params: Record<string, any>): string => {
-  const searchParams = new URLSearchParams();
-  
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      if (Array.isArray(value)) {
-        value.forEach(item => searchParams.append(`${key}[]`, item.toString()));
-      } else {
-        searchParams.append(key, value.toString());
-      }
-    }
-  });
-  
-  return searchParams.toString();
-};
 
 // API клиент
 const api = {
-  // Аутентификация
-  auth: {
-    login: async (email: string, password: string): Promise<AuthResponse> => {
-      try {
-        const response = await fetch(`${API_URL}/auth/login`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email, password }),
-        });
-        
-        if (!response.ok) {
-          const error = await response.json();
-          throw error;
-        }
-        
-        const data = await response.json();
-        // Сохранение токена в localStorage
-        localStorage.setItem('token', data.token);
-        return data;
-      } catch (error) {
-        return handleApiError(error);
-      }
-    },
-    
-    logout: (): void => {
-      localStorage.removeItem('token');
-    },
-    
-    getToken: (): string | null => {
-      return localStorage.getItem('token');
-    },
-    
-    isAuthenticated: (): boolean => {
-      return !!localStorage.getItem('token');
-    },
-  },
-  
-  // Автомобили
   cars: {
-    getAll: async (filters: FilterParams = {}): Promise<PaginatedResponse<Car>> => {
-      try {
-        const queryString = createQueryString(filters);
-        const response = await fetch(`${API_URL}/cars?${queryString}`, {
-          headers: {
-            'Authorization': `Bearer ${api.auth.getToken()}`,
-          },
-        });
-        
-        if (!response.ok) {
-          const error = await response.json();
-          throw error;
-        }
-        
-        return await response.json();
-      } catch (error) {
-        return handleApiError(error);
-      }
+    getAll: async (params: ApiParams = {}) => {
+      // В реальном приложении здесь будет запрос к API
+      console.log('API call: Get all cars with params', params);
+      return { data: [], totalPages: 0 };
     },
-    
-    getById: async (id: string): Promise<Car> => {
-      try {
-        const response = await fetch(`${API_URL}/cars/${id}`, {
-          headers: {
-            'Authorization': `Bearer ${api.auth.getToken()}`,
-          },
-        });
-        
-        if (!response.ok) {
-          const error = await response.json();
-          throw error;
-        }
-        
-        return await response.json();
-      } catch (error) {
-        return handleApiError(error);
-      }
+    getById: async (id: string) => {
+      console.log('API call: Get car by id', id);
+      return {} as Car;
     },
-    
-    create: async (carData: Omit<Car, 'id' | 'createdAt' | 'updatedAt'>): Promise<Car> => {
-      try {
-        const response = await fetch(`${API_URL}/cars`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${api.auth.getToken()}`,
-          },
-          body: JSON.stringify(carData),
-        });
-        
-        if (!response.ok) {
-          const error = await response.json();
-          throw error;
-        }
-        
-        return await response.json();
-      } catch (error) {
-        return handleApiError(error);
-      }
+    create: async (car: Partial<Car>) => {
+      console.log('API call: Create car', car);
+      return {} as Car;
     },
-    
-    update: async (id: string, carData: Partial<Car>): Promise<Car> => {
-      try {
-        const response = await fetch(`${API_URL}/cars/${id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${api.auth.getToken()}`,
-          },
-          body: JSON.stringify(carData),
-        });
-        
-        if (!response.ok) {
-          const error = await response.json();
-          throw error;
-        }
-        
-        return await response.json();
-      } catch (error) {
-        return handleApiError(error);
-      }
+    update: async (id: string, car: Partial<Car>) => {
+      console.log('API call: Update car', id, car);
+      return {} as Car;
     },
-    
-    delete: async (id: string): Promise<void> => {
-      try {
-        const response = await fetch(`${API_URL}/cars/${id}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${api.auth.getToken()}`,
-          },
-        });
-        
-        if (!response.ok) {
-          const error = await response.json();
-          throw error;
-        }
-      } catch (error) {
-        handleApiError(error);
-      }
-    },
+    delete: async (id: string) => {
+      console.log('API call: Delete car', id);
+    }
   },
-  
-  // Бронирования
   bookings: {
-    create: async (bookingData: {
-      carId: string;
-      startDate: Date;
-      endDate: Date;
-      insurance: boolean;
-      additionalServices: string[];
-    }): Promise<Booking> => {
-      try {
-        const response = await fetch(`${API_URL}/bookings`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${api.auth.getToken()}`,
-          },
-          body: JSON.stringify(bookingData),
-        });
-        
-        if (!response.ok) {
-          const error = await response.json();
-          throw error;
-        }
-        
-        return await response.json();
-      } catch (error) {
-        return handleApiError(error);
-      }
+    getAll: async (params: ApiParams = {}) => {
+      console.log('API call: Get all bookings with params', params);
+      return { data: [], totalPages: 0 };
     },
-    
-    getUserBookings: async (): Promise<Booking[]> => {
-      try {
-        const response = await fetch(`${API_URL}/bookings/user`, {
-          headers: {
-            'Authorization': `Bearer ${api.auth.getToken()}`,
-          },
-        });
-        
-        if (!response.ok) {
-          const error = await response.json();
-          throw error;
-        }
-        
-        return await response.json();
-      } catch (error) {
-        return handleApiError(error);
-      }
+    getUserBookings: async (params: ApiParams = {}) => {
+      console.log('API call: Get user bookings with params', params);
+      return [];
     },
-    
-    getAll: async (page: number = 1, limit: number = 10): Promise<PaginatedResponse<Booking>> => {
-      try {
-        const response = await fetch(`${API_URL}/bookings?page=${page}&limit=${limit}`, {
-          headers: {
-            'Authorization': `Bearer ${api.auth.getToken()}`,
-          },
-        });
-        
-        if (!response.ok) {
-          const error = await response.json();
-          throw error;
-        }
-        
-        return await response.json();
-      } catch (error) {
-        return handleApiError(error);
-      }
+    getById: async (id: string) => {
+      console.log('API call: Get booking by id', id);
+      return {} as Booking;
     },
-    
-    updateStatus: async (id: string, status: Booking['status']): Promise<Booking> => {
-      try {
-        const response = await fetch(`${API_URL}/bookings/${id}/status`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${api.auth.getToken()}`,
-          },
-          body: JSON.stringify({ status }),
-        });
-        
-        if (!response.ok) {
-          const error = await response.json();
-          throw error;
-        }
-        
-        return await response.json();
-      } catch (error) {
-        return handleApiError(error);
-      }
+    create: async (booking: Partial<Booking>) => {
+      console.log('API call: Create booking', booking);
+      return {} as Booking;
     },
+    updateStatus: async (id: string, status: string) => {
+      console.log('API call: Update booking status', id, status);
+      return {} as Booking;
+    },
+    delete: async (id: string) => {
+      console.log('API call: Delete booking', id);
+    }
   },
+  users: {
+    getAll: async (params: ApiParams = {}) => {
+      console.log('API call: Get all users with params', params);
+      return { data: [], totalPages: 0 };
+    },
+    getById: async (id: string) => {
+      console.log('API call: Get user by id', id);
+      return {} as User;
+    },
+    update: async (id: string, user: Partial<User>) => {
+      console.log('API call: Update user', id, user);
+      return {} as User;
+    },
+    create: async (user: Partial<User>) => {
+      console.log('API call: Create user', user);
+      return {} as User;
+    },
+    delete: async (id: string) => {
+      console.log('API call: Delete user', id);
+    }
+  },
+  admin: {
+    getDashboardStats: async (params: { timeRange?: string } = {}) => {
+      console.log('API call: Get dashboard stats', params);
+      return {};
+    }
+  },
+  notifications: {
+    getAdminNotifications: async () => {
+      console.log('API call: Get admin notifications');
+      return [];
+    },
+    markAsRead: async (id: string) => {
+      console.log('API call: Mark notification as read', id);
+    },
+    markAllAsRead: async () => {
+      console.log('API call: Mark all notifications as read');
+    }
+  }
 };
 
 export default api;
