@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -39,13 +38,23 @@ import {
   ChevronRight, 
   Loader2, 
   CheckCircle,
-  InfoIcon
+  InfoIcon,
+  FilterX,
+  FileSymlink
 } from "lucide-react";
-import { format, parseISO, isAfter } from "date-fns";
+import { format, parseISO, isAfter, differenceInDays } from "date-fns";
 import { ru } from "date-fns/locale";
 import api, { Booking } from "@/lib/api";
 import BookingDetailMobile from "@/components/BookingDetailMobile";
 import ResponsiveLayout from "@/components/ResponsiveLayout";
+import { useFilterStorage } from "@/hooks/useFilterStorage";
+
+// Интерфейс для фильтров бронирований
+interface BookingFilters {
+  status: string[];
+  dateRange: [Date | null, Date | null];
+  search: string;
+}
 
 const ProfileBookings = () => {
   const navigate = useNavigate();
@@ -56,6 +65,28 @@ const ProfileBookings = () => {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+  
+  // Хранение фильтров в localStorage
+  const [filters, setFilters, resetFilters] = useFilterStorage<BookingFilters>(
+    'user-bookings-filters',
+    {
+      status: [],
+      dateRange: [null, null],
+      search: ""
+    }
+  );
+  
+  // Статистика бронирований
+  const [stats, setStats] = useState({
+    totalBookings: 0,
+    completed: 0,
+    cancelled: 0,
+    active: 0,
+    totalSpent: 0,
+    averageRating: 0
+  });
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -188,6 +219,26 @@ const ProfileBookings = () => {
         ];
         
         setBookings(mockBookings);
+        
+        // Рассчитываем статистику
+        const totalSpent = mockBookings.reduce((sum, booking) => 
+          booking.status === 'completed' || booking.status === 'confirmed' 
+            ? sum + booking.totalPrice 
+            : sum, 0);
+        
+        const completedBookings = mockBookings.filter(b => b.status === 'completed').length;
+        const activeBookings = mockBookings.filter(b => 
+          b.status === 'confirmed' || b.status === 'pending').length;
+        const cancelledBookings = mockBookings.filter(b => b.status === 'cancelled').length;
+        
+        setStats({
+          totalBookings: mockBookings.length,
+          completed: completedBookings,
+          active: activeBookings,
+          cancelled: cancelledBookings,
+          totalSpent,
+          averageRating: 4.7 // Пример рейтинга
+        });
       } catch (error) {
         console.error("Ошибка при загрузке бронирований:", error);
         toast({
@@ -223,11 +274,20 @@ const ProfileBookings = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Обновляем локальное состояние
-      setBookings(bookings.map(booking => 
+      const updatedBookings = bookings.map(booking => 
         booking.id === selectedBooking.id 
           ? { ...booking, status: "cancelled", updatedAt: new Date().toISOString() } 
           : booking
-      ));
+      );
+      
+      setBookings(updatedBookings);
+      
+      // Обновляем статистику
+      setStats(prev => ({
+        ...prev,
+        active: prev.active - 1,
+        cancelled: prev.cancelled + 1
+      }));
       
       toast({
         title: "Бронирование отменено",
@@ -256,6 +316,23 @@ const ProfileBookings = () => {
     setSelectedBooking(booking);
     setCancelDialogOpen(true);
   };
+  
+  const handleShareBooking = (booking: Booking) => {
+    setSelectedBooking(booking);
+    // Создаем URL для шаринга
+    const shareLink = `${window.location.origin}/shared-booking/${booking.id}?ref=user-share`;
+    setShareUrl(shareLink);
+    setShowShareDialog(true);
+  };
+  
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      toast({
+        title: "Ссылка скопирована",
+        description: "Ссылка на бронирование скопирована в буфер обмена"
+      });
+    });
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -275,6 +352,15 @@ const ProfileBookings = () => {
   const canBeCancelled = (booking: Booking) => {
     return (booking.status === 'pending' || booking.status === 'confirmed') && 
            isAfter(parseISO(booking.startDate), new Date());
+  };
+  
+  const canBeShared = (booking: Booking) => {
+    return booking.status === 'confirmed' || booking.status === 'pending';
+  };
+  
+  // Получаем количество дней аренды
+  const getRentalDays = (booking: Booking) => {
+    return differenceInDays(parseISO(booking.endDate), parseISO(booking.startDate)) + 1;
   };
 
   const filteredBookings = bookings.filter(booking => {
@@ -312,8 +398,51 @@ const ProfileBookings = () => {
             <Car className="mr-2 h-4 w-4" /> Арендовать автомобиль
           </Button>
         </div>
+        
+        {/* Карточки статистики */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Всего бронирований</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{stats.totalBookings}</div>
+              <p className="text-sm text-gray-500">За все время</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Активные</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-green-600">{stats.active}</div>
+              <p className="text-sm text-gray-500">Текущие бронирования</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Завершенные</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-blue-600">{stats.completed}</div>
+              <p className="text-sm text-gray-500">Успешные поездки</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Общая сумма</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{stats.totalSpent.toLocaleString()} ₽</div>
+              <p className="text-sm text-gray-500">Потрачено на аренду</p>
+            </CardContent>
+          </Card>
+        </div>
 
-        {loading ? (
+        {"    "}loading ? (
           <div className="flex justify-center items-center h-64">
             <Loader2 className="h-8 w-8 text-primary animate-spin" />
           </div>
@@ -325,7 +454,7 @@ const ProfileBookings = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {upcomingBookings.map(booking => (
                     <Card key={booking.id} className="hover:shadow-md transition-shadow">
-                      <CardHeader className="pb-2">
+                      <CardHeader className="pb-2 pt-4">
                         <div className="flex justify-between items-start">
                           <div className="flex items-center gap-2">
                             <div className="h-10 w-10 rounded-md overflow-hidden">
@@ -353,30 +482,42 @@ const ProfileBookings = () => {
                           <div className="flex items-center gap-2 text-sm">
                             <CreditCard className="h-4 w-4 text-gray-500" />
                             <span className="font-medium">{booking.totalPrice} ₽</span>
+                            <span className="text-xs text-gray-500">
+                              ({getRentalDays(booking)} {getRentalDays(booking) === 1 ? 'день' : getRentalDays(booking) < 5 ? 'дня' : 'дней'})
+                            </span>
                           </div>
                         </div>
                       </CardContent>
-                      <CardFooter className="pt-0">
-                        <div className="w-full flex gap-2">
+                      <CardFooter className="pt-0 pb-4 gap-2 flex-wrap">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => handleViewDetails(booking)}
+                        >
+                          Детали
+                        </Button>
+                        {canBeShared(booking) && (
                           <Button 
-                            variant="outline" 
+                            variant="secondary" 
                             size="sm" 
                             className="flex-1"
-                            onClick={() => handleViewDetails(booking)}
+                            onClick={() => handleShareBooking(booking)}
                           >
-                            Детали
+                            <FileSymlink className="mr-1 h-3 w-3" />
+                            Поделиться
                           </Button>
-                          {canBeCancelled(booking) && (
-                            <Button 
-                              variant="destructive" 
-                              size="sm" 
-                              className="flex-1"
-                              onClick={() => handleCancelRequest(booking)}
-                            >
-                              Отменить
-                            </Button>
-                          )}
-                        </div>
+                        )}
+                        {canBeCancelled(booking) && (
+                          <Button 
+                            variant="destructive" 
+                            size="sm" 
+                            className="flex-1"
+                            onClick={() => handleCancelRequest(booking)}
+                          >
+                            Отменить
+                          </Button>
+                        )}
                       </CardFooter>
                     </Card>
                   ))}
@@ -396,18 +537,28 @@ const ProfileBookings = () => {
                 
                 <TabsContent value={activeTab} className="mt-0">
                   {filteredBookings.length === 0 ? (
-                    <div className="text-center py-12 border rounded-lg">
+                    <div className="text-center py-12 border rounded-lg bg-white">
                       <Clock className="mx-auto h-12 w-12 text-gray-400" />
                       <h3 className="mt-4 text-lg font-medium">Нет бронирований</h3>
                       <p className="mt-1 text-gray-500">
                         В этой категории пока нет бронирований
                       </p>
+                      {activeTab !== "all" && (
+                        <Button 
+                          variant="outline" 
+                          className="mt-4"
+                          onClick={() => setActiveTab("all")}
+                        >
+                          <FilterX className="mr-2 h-4 w-4" />
+                          Показать все бронирования
+                        </Button>
+                      )}
                     </div>
                   ) : (
                     <div className="space-y-4">
                       {/* Десктопная версия списка */}
                       <div className="hidden md:block">
-                        <div className="rounded-md border">
+                        <div className="rounded-md border bg-white overflow-hidden">
                           <div className="grid grid-cols-12 bg-muted/50 p-4 text-sm font-medium">
                             <div className="col-span-3">Автомобиль</div>
                             <div className="col-span-2">Период</div>
@@ -438,8 +589,13 @@ const ProfileBookings = () => {
                                 <div className="text-gray-500">—</div>
                                 <div>{formatDate(booking.endDate).split(',')[0]}</div>
                               </div>
-                              <div className="col-span-2 font-medium">
-                                {booking.totalPrice} ₽
+                              <div className="col-span-2">
+                                <div className="font-medium">
+                                  {booking.totalPrice} ₽
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {getRentalDays(booking)} {getRentalDays(booking) === 1 ? 'день' : getRentalDays(booking) < 5 ? 'дня' : 'дней'}
+                                </div>
                               </div>
                               <div className="col-span-2">
                                 {getStatusBadge(booking.status)}
@@ -452,6 +608,16 @@ const ProfileBookings = () => {
                                 >
                                   Детали
                                 </Button>
+                                {canBeShared(booking) && (
+                                  <Button 
+                                    variant="secondary" 
+                                    size="sm"
+                                    onClick={() => handleShareBooking(booking)}
+                                  >
+                                    <FileSymlink className="mr-1 h-3 w-3" />
+                                    Поделиться
+                                  </Button>
+                                )}
                                 {canBeCancelled(booking) && (
                                   <Button 
                                     variant="destructive" 
@@ -470,7 +636,7 @@ const ProfileBookings = () => {
                       {/* Мобильная версия списка */}
                       <div className="md:hidden space-y-4">
                         {filteredBookings.map(booking => (
-                          <Card key={booking.id} className="overflow-hidden">
+                          <Card key={booking.id} className="overflow-hidden bg-white">
                             <div className="p-4">
                               <div className="flex justify-between items-start mb-3">
                                 <div className="flex items-center gap-2">
@@ -498,10 +664,13 @@ const ProfileBookings = () => {
                                 <div>
                                   <div className="text-gray-500">Сумма</div>
                                   <div className="font-medium">{booking.totalPrice} ₽</div>
+                                  <div className="text-xs">
+                                    {getRentalDays(booking)} {getRentalDays(booking) === 1 ? 'день' : getRentalDays(booking) < 5 ? 'дня' : 'дней'}
+                                  </div>
                                 </div>
                               </div>
                               
-                              <div className="flex gap-2">
+                              <div className="flex gap-2 flex-wrap">
                                 <Button 
                                   variant="outline" 
                                   size="sm" 
@@ -510,6 +679,19 @@ const ProfileBookings = () => {
                                 >
                                   Детали
                                 </Button>
+                                
+                                {canBeShared(booking) && (
+                                  <Button 
+                                    variant="secondary" 
+                                    size="sm" 
+                                    className="flex-1"
+                                    onClick={() => handleShareBooking(booking)}
+                                  >
+                                    <FileSymlink className="mr-1 h-3 w-3" />
+                                    Поделиться
+                                  </Button>
+                                )}
+                                
                                 {canBeCancelled(booking) && (
                                   <Button 
                                     variant="destructive" 
@@ -595,12 +777,67 @@ const ProfileBookings = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Диалог для шаринга бронирования */}
+      <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Поделиться бронированием</DialogTitle>
+            <DialogDescription>
+              Скопируйте ссылку и отправьте её тому, с кем хотите поделиться информацией о бронировании.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="h-12 w-12 rounded-md overflow-hidden">
+                <img 
+                  src={selectedBooking?.car?.image} 
+                  alt={selectedBooking?.car?.name} 
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div>
+                <div className="font-medium">{selectedBooking?.car?.name}</div>
+                <div className="text-sm text-gray-500">
+                  {selectedBooking && formatDate(selectedBooking.startDate)} — {selectedBooking && formatDate(selectedBooking.endDate)}
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2 mt-4">
+              <Input
+                value={shareUrl}
+                readOnly
+                className="flex-1"
+                onClick={event => event.currentTarget.select()}
+              />
+              <Button onClick={copyToClipboard}>
+                Копировать
+              </Button>
+            </div>
+            
+            <div className="mt-4 text-sm text-gray-500">
+              <p>Ссылка действительна в течение 7 дней. Получатель сможет видеть основную информацию о бронировании.</p>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowShareDialog(false)}
+            >
+              Закрыть
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Мобильный компонент для просмотра деталей бронирования */}
       <BookingDetailMobile 
         booking={selectedBooking} 
         open={detailsOpen} 
         onClose={() => setDetailsOpen(false)}
-        onCancel={canBeCancelled(selectedBooking as Booking) ? () => handleCancelRequest(selectedBooking as Booking) : undefined}
+        onCancel={selectedBooking && canBeCancelled(selectedBooking) ? () => handleCancelRequest(selectedBooking) : undefined}
       />
     </ResponsiveLayout>
   );

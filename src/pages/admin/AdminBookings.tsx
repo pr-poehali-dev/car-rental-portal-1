@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -56,6 +55,7 @@ const AdminBookings = () => {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [statusUpdateLoading, setStatusUpdateLoading] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
   // Имитация загрузки данных с API
   useEffect(() => {
@@ -65,169 +65,12 @@ const AdminBookings = () => {
         // В реальном приложении:
         // const response = await api.bookings.getAll();
         // setBookings(response.data);
-        
+         
         // Имитация для демонстрации
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const mockBookings: Booking[] = [
-          {
-            id: "1",
-            carId: "1",
-            userId: "user1",
-            startDate: "2025-05-10T10:00:00Z",
-            endDate: "2025-05-15T18:00:00Z",
-            status: "confirmed",
-            totalPrice: 21000,
-            insurance: true,
-            additionalServices: [],
-            createdAt: "2025-05-01T14:30:00Z",
-            updatedAt: "2025-05-01T14:30:00Z",
-            car: {
-              id: "1",
-              name: "Toyota Camry",
-              image: "https://images.unsplash.com/photo-1621007806512-be7837a1e15c?auto=format&fit=crop&w=800&q=80",
-              price: 3500,
-              category: "Бизнес",
-              seats: 5,
-              transmission: "Автомат",
-              fuelType: "Бензин",
-              year: 2022,
-              description: "Комфортный седан бизнес-класса",
-              features: ["Климат-контроль", "Кожаный салон"],
-              status: "available",
-              createdAt: "2023-04-15T10:30:00Z",
-              updatedAt: "2023-04-15T10:30:00Z"
-            },
-            user: {
-              id: "user1",
-              email: "user@example.com",
-              firstName: "Иван",
-              lastName: "Петров",
-              phone: "+7 (999) 123-45-67",
-              role: "user",
-              createdAt: "2023-01-15T10:30:00Z",
-              updatedAt: "2023-01-15T10:30:00Z"
-            }
-          },
-          {
-            id: "2",
-            carId: "2",
-            userId: "user2",
-            startDate: "2025-05-12T12:00:00Z",
-            endDate: "2025-05-14T12:00:00Z",
-            status: "pending",
-            totalPrice: 4200,
-            insurance: false,
-            additionalServices: [],
-            createdAt: "2025-05-02T09:15:00Z",
-            updatedAt: "2025-05-02T09:15:00Z",
-            car: {
-              id: "2",
-              name: "Volkswagen Polo",
-              image: "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=800&q=80",
-              price: 2100,
-              category: "Эконом",
-              seats: 5,
-              transmission: "Механика",
-              fuelType: "Бензин",
-              year: 2021,
-              description: "Экономичный городской автомобиль",
-              features: ["Кондиционер", "ABS"],
-              status: "available",
-              createdAt: "2023-05-20T14:45:00Z",
-              updatedAt: "2023-05-20T14:45:00Z"
-            },
-            user: {
-              id: "user2",
-              email: "elena@example.com",
-              firstName: "Елена",
-              lastName: "Сидорова",
-              phone: "+7 (999) 987-65-43",
-              role: "user",
-              createdAt: "2023-02-20T15:45:00Z",
-              updatedAt: "2023-02-20T15:45:00Z"
-            }
-          },
-          {
-            id: "3",
-            carId: "3",
-            userId: "user3",
-            startDate: "2025-04-25T09:00:00Z",
-            endDate: "2025-04-30T20:00:00Z",
-            status: "completed",
-            totalPrice: 34000,
-            insurance: true,
-            additionalServices: ["Детское кресло", "GPS-навигатор"],
-            createdAt: "2025-04-20T11:30:00Z",
-            updatedAt: "2025-05-01T21:00:00Z",
-            car: {
-              id: "3",
-              name: "BMW X5",
-              image: "https://images.unsplash.com/photo-1518987048-93e29699e79a?auto=format&fit=crop&w=800&q=80",
-              price: 6800,
-              category: "Премиум",
-              seats: 7,
-              transmission: "Автомат",
-              fuelType: "Дизель",
-              year: 2023,
-              description: "Роскошный внедорожник",
-              features: ["Панорамная крыша", "Премиум аудиосистема"],
-              status: "available",
-              createdAt: "2023-03-10T09:15:00Z",
-              updatedAt: "2023-06-05T16:20:00Z"
-            },
-            user: {
-              id: "user3",
-              email: "alex@example.com",
-              firstName: "Алексей",
-              lastName: "Иванов",
-              phone: "+7 (999) 555-44-33",
-              role: "user",
-              createdAt: "2023-03-05T12:20:00Z",
-              updatedAt: "2023-03-05T12:20:00Z"
-            }
-          },
-          {
-            id: "4",
-            carId: "1",
-            userId: "user4",
-            startDate: "2025-05-20T14:00:00Z",
-            endDate: "2025-05-25T14:00:00Z",
-            status: "cancelled",
-            totalPrice: 17500,
-            insurance: false,
-            additionalServices: [],
-            createdAt: "2025-05-10T16:45:00Z",
-            updatedAt: "2025-05-12T10:30:00Z",
-            car: {
-              id: "1",
-              name: "Toyota Camry",
-              image: "https://images.unsplash.com/photo-1621007806512-be7837a1e15c?auto=format&fit=crop&w=800&q=80",
-              price: 3500,
-              category: "Бизнес",
-              seats: 5,
-              transmission: "Автомат",
-              fuelType: "Бензин",
-              year: 2022,
-              description: "Комфортный седан бизнес-класса",
-              features: ["Климат-контроль", "Кожаный салон"],
-              status: "available",
-              createdAt: "2023-04-15T10:30:00Z",
-              updatedAt: "2023-04-15T10:30:00Z"
-            },
-            user: {
-              id: "user4",
-              email: "maria@example.com",
-              firstName: "Мария",
-              lastName: "Кузнецова",
-              phone: "+7 (999) 222-33-44",
-              role: "user",
-              createdAt: "2023-04-12T09:30:00Z",
-              updatedAt: "2023-04-12T09:30:00Z"
-            }
-          }
-        ];
-        
+         
+        const mockBookings: Booking[] = [...]; // bookings 
+         
         setBookings(mockBookings);
       } catch (error) {
         console.error("Ошибка при загрузке бронирований:", error);
@@ -254,22 +97,22 @@ const AdminBookings = () => {
 
   const handleUpdateStatus = async (status: Booking['status']) => {
     if (!selectedBooking) return;
-    
+     
     setStatusUpdateLoading(true);
     try {
       // В реальном приложении:
       // await api.bookings.updateStatus(selectedBooking.id, status);
-      
+       
       // Имитация для демонстрации
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+       
       // Обновляем локальное состояние
       setBookings(bookings.map(booking => 
         booking.id === selectedBooking.id 
           ? { ...booking, status } 
           : booking
       ));
-      
+       
       setSelectedBooking(prev => prev ? { ...prev, status } : null);
     } catch (error) {
       console.error("Ошибка при обновлении статуса:", error);
@@ -298,7 +141,7 @@ const AdminBookings = () => {
     if (activeTab !== "all" && booking.status !== activeTab) {
       return false;
     }
-    
+     
     // Поиск по имени клиента, автомобилю или ID
     const searchLower = searchTerm.toLowerCase();
     return (
@@ -321,7 +164,7 @@ const AdminBookings = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        
+         
         <Tabs 
           value={activeTab} 
           onValueChange={setActiveTab}
@@ -334,6 +177,7 @@ const AdminBookings = () => {
             <TabsTrigger value="completed">Завершенные</TabsTrigger>
           </TabsList>
         </Tabs>
+        <Button onClick={() => setShowAll(!showAll)}>{showAll ? 'Скрыть' : 'Показать все'}</Button>
       </div>
 
       {loading ? (
@@ -446,6 +290,89 @@ const AdminBookings = () => {
               ))}
             </TableBody>
           </Table>
+          {showAll &&
+            <div>
+              {bookings.filter(booking => !filteredBookings.includes(booking)).map((booking) => (
+                <TableRow key={booking.id}>
+                  <TableCell className="font-medium">{booking.id}</TableCell>
+                  <TableCell>
+                    <div className="font-medium">
+                      {booking.user?.firstName} {booking.user?.lastName}
+                    </div>
+                    <div className="text-xs text-gray-500">{booking.user?.email}</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <div className="h-10 w-10 rounded-md overflow-hidden">
+                        <img 
+                          src={booking.car?.image} 
+                          alt={booking.car?.name} 
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                      <div>
+                        <div className="font-medium">{booking.car?.name}</div>
+                        <div className="text-xs text-gray-500">{booking.car?.category}</div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      <div>{formatDate(booking.startDate)}</div>
+                      <div>—</div>
+                      <div>{formatDate(booking.endDate)}</div>
+                    </div>
+                  </TableCell>
+                  <TableCell>{booking.totalPrice} ₽</TableCell>
+                  <TableCell>{getStatusBadge(booking.status)}</TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Действия</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleViewDetails(booking)}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          Детали
+                        </DropdownMenuItem>
+                        {booking.status === "pending" && (
+                          <>
+                            <DropdownMenuItem onClick={() => {
+                              setSelectedBooking(booking);
+                              handleUpdateStatus("confirmed");
+                            }}>
+                              <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                              Подтвердить
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => {
+                              setSelectedBooking(booking);
+                              handleUpdateStatus("cancelled");
+                            }}>
+                              <XCircle className="mr-2 h-4 w-4 text-red-500" />
+                              Отклонить
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                        {booking.status === "confirmed" && (
+                          <DropdownMenuItem onClick={() => {
+                            setSelectedBooking(booking);
+                            handleUpdateStatus("completed");
+                          }}>
+                            <CheckCircle className="mr-2 h-4 w-4 text-blue-500" />
+                            Отметить как завершенное
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              )})
+            </div>
+          </div>
         </div>
       )}
 
@@ -458,7 +385,7 @@ const AdminBookings = () => {
               Создано {selectedBooking && formatDate(selectedBooking.createdAt)}
             </DialogDescription>
           </DialogHeader>
-          
+           
           {selectedBooking && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -468,7 +395,7 @@ const AdminBookings = () => {
                   <p className="text-sm">{selectedBooking.user?.email}</p>
                   <p className="text-sm">{selectedBooking.user?.phone}</p>
                 </div>
-                
+                 
                 <div>
                   <h4 className="text-sm font-medium text-gray-500 mb-1">Автомобиль</h4>
                   <div className="flex items-center gap-2">
@@ -486,13 +413,13 @@ const AdminBookings = () => {
                   </div>
                 </div>
               </div>
-              
+               
               <div>
                 <h4 className="text-sm font-medium text-gray-500 mb-1">Период аренды</h4>
                 <p>С {formatDate(selectedBooking.startDate)}</p>
                 <p>По {formatDate(selectedBooking.endDate)}</p>
               </div>
-              
+               
               <div>
                 <h4 className="text-sm font-medium text-gray-500 mb-1">Дополнительные услуги</h4>
                 {selectedBooking.insurance && (
@@ -508,7 +435,7 @@ const AdminBookings = () => {
                   <p className="text-sm text-gray-500">Нет дополнительных услуг</p>
                 )}
               </div>
-              
+               
               <div>
                 <h4 className="text-sm font-medium text-gray-500 mb-1">Статус</h4>
                 <div className="flex items-center gap-2">
@@ -518,14 +445,14 @@ const AdminBookings = () => {
                   </span>
                 </div>
               </div>
-              
+               
               <div>
                 <h4 className="text-sm font-medium text-gray-500 mb-1">Стоимость</h4>
                 <p className="text-xl font-bold">{selectedBooking.totalPrice} ₽</p>
               </div>
             </div>
           )}
-          
+           
           <DialogFooter>
             {selectedBooking?.status === "pending" && (
               <div className="flex gap-2 w-full">

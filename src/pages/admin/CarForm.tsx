@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect } from "react");
 import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -13,23 +12,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
+import {
   Card,
   CardContent,
-  CardFooter 
+  CardFooter
 } from "@/components/ui/card";
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
 } from "@/components/ui/tabs";
-import { 
-  ChevronLeft, 
-  Plus, 
-  X, 
-  ImagePlus, 
-  Loader2 
+import {
+  ChevronLeft,
+  Plus,
+  X,
+  ImagePlus,
+  Loader2
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import api, { Car } from "@/lib/api";
@@ -105,7 +104,7 @@ const CarForm = () => {
             toast({
               variant: "destructive",
               title: "Ошибка",
-              description: "Автомобиль не найден",
+              description: "Автомобиль не найден"
             });
             navigate("/admin/cars");
           }
@@ -114,7 +113,7 @@ const CarForm = () => {
           toast({
             variant: "destructive",
             title: "Ошибка",
-            description: "Не удалось загрузить данные автомобиля",
+            description: "Не удалось загрузить данные автомобиля"
           });
         } finally {
           setLoading(false);
@@ -129,8 +128,8 @@ const CarForm = () => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === "price" || name === "seats" || name === "year" 
-        ? parseInt(value, 10) || 0 
+      [name]: name === "price" || name === "seats" || name === "year"
+        ? parseInt(value, 10) || 0
         : value
     }));
   };
@@ -180,7 +179,7 @@ const CarForm = () => {
       toast({
         variant: "destructive",
         title: "Ошибка",
-        description: "Введите название автомобиля",
+        description: "Введите название автомобиля"
       });
       return;
     }
@@ -189,7 +188,7 @@ const CarForm = () => {
       toast({
         variant: "destructive",
         title: "Ошибка",
-        description: "Введите корректную цену",
+        description: "Введите корректную цену"
       });
       return;
     }
@@ -198,7 +197,7 @@ const CarForm = () => {
       toast({
         variant: "destructive",
         title: "Ошибка",
-        description: "Добавьте хотя бы одно изображение",
+        description: "Добавьте хотя бы одно изображение"
       });
       return;
     }
@@ -218,9 +217,9 @@ const CarForm = () => {
       
       toast({
         title: "Успешно",
-        description: isEditMode 
-          ? "Автомобиль успешно обновлен" 
-          : "Автомобиль успешно добавлен",
+        description: isEditMode
+          ? "Автомобиль успешно обновлен"
+          : "Автомобиль успешно добавлен"
       });
       
       navigate("/admin/cars");
@@ -229,7 +228,7 @@ const CarForm = () => {
       toast({
         variant: "destructive",
         title: "Ошибка",
-        description: "Не удалось сохранить данные автомобиля",
+        description: "Не удалось сохранить данные автомобиля"
       });
     } finally {
       setSubmitting(false);
@@ -249,8 +248,8 @@ const CarForm = () => {
   return (
     <AdminLayout title={isEditMode ? "Редактирование автомобиля" : "Добавление автомобиля"}>
       <div className="mb-6">
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           onClick={() => navigate("/admin/cars")}
           className="flex items-center"
         >
@@ -428,9 +427,9 @@ const CarForm = () => {
                       placeholder="Введите особенность"
                       className="flex-1"
                     />
-                    <Button 
-                      type="button" 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      variant="outline"
                       onClick={handleAddFeature}
                     >
                       <Plus className="h-4 w-4" />
@@ -440,12 +439,12 @@ const CarForm = () => {
                   {formData.features.length > 0 ? (
                     <div className="flex flex-wrap gap-2 mt-4">
                       {formData.features.map((feat, index) => (
-                        <div 
-                          key={index} 
+                        <div
+                          key={index}
                           className="bg-gray-100 px-3 py-1 rounded-full flex items-center gap-1"
                         >
                           <span className="text-sm">{feat}</span>
-                          <button 
+                          <button
                             type="button"
                             onClick={() => handleRemoveFeature(index)}
                             className="text-gray-500 hover:text-red-500"
@@ -478,9 +477,9 @@ const CarForm = () => {
                       placeholder="Введите URL изображения"
                       className="flex-1"
                     />
-                    <Button 
-                      type="button" 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      variant="outline"
                       onClick={handleAddImage}
                     >
                       <Plus className="h-4 w-4" />
@@ -496,12 +495,12 @@ const CarForm = () => {
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
                     {formData.images.map((image, index) => (
                       <div key={index} className="relative group">
-                        <img 
-                          src={image} 
-                          alt={`Изображение ${index + 1}`} 
+                        <img
+                          src={image}
+                          alt={`Изображение ${index + 1}`}
                           className="w-full h-32 object-cover rounded-md"
                         />
-                        <button 
+                        <button
                           type="button"
                           onClick={() => handleRemoveImage(index)}
                           className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"

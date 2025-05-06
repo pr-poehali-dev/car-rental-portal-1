@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -120,6 +121,8 @@ const Catalog = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [filteredCars, setFilteredCars] = useState<Car[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>('price-asc');
+  const [visibleCount, setVisibleCount] = useState<number>(6);
+  const [initialLoad, setInitialLoad] = useState<boolean>(true);
   
   // Опции сортировки для компонента SortingPanel
   const sortingOptions: SortingOption[] = [
@@ -239,6 +242,7 @@ const Catalog = () => {
     const timer = setTimeout(() => {
       setLoading(false);
       setFilteredCars(allCars);
+      setInitialLoad(false);
     }, 1000);
     
     return () => clearTimeout(timer);
@@ -246,56 +250,69 @@ const Catalog = () => {
 
   // Применение фильтров
   useEffect(() => {
-    let result = allCars;
+    if (initialLoad) return;
     
-    // Фильтр по цене
-    result = result.filter(car => 
-      car.price >= filterState.priceRange[0] && car.price <= filterState.priceRange[1]
-    );
+    // Сбрасываем количество отображаемых автомобилей при изменении фильтров
+    setVisibleCount(6);
     
-    // Фильтр по категории
-    if (filterState.categories.length > 0) {
+    // Имитация загрузки при изменении фильтров
+    setLoading(true);
+    
+    const timer = setTimeout(() => {
+      let result = allCars;
+      
+      // Фильтр по цене
       result = result.filter(car => 
-        filterState.categories.includes(car.category)
+        car.price >= filterState.priceRange[0] && car.price <= filterState.priceRange[1]
       );
-    }
+      
+      // Фильтр по категории
+      if (filterState.categories.length > 0) {
+        result = result.filter(car => 
+          filterState.categories.includes(car.category)
+        );
+      }
+      
+      // Фильтр по количеству мест
+      if (filterState.seats.length > 0) {
+        result = result.filter(car => 
+          filterState.seats.includes(car.seats)
+        );
+      }
+      
+      // Фильтр по типу трансмиссии
+      if (filterState.transmission.length > 0) {
+        result = result.filter(car => 
+          filterState.transmission.includes(car.transmission)
+        );
+      }
+      
+      // Поиск по названию
+      if (filterState.search) {
+        const searchTerm = filterState.search.toLowerCase();
+        result = result.filter(car => 
+          car.name.toLowerCase().includes(searchTerm)
+        );
+      }
+      
+      // Фильтр по опциям
+      if (filterState.features && filterState.features.length > 0) {
+        result = result.filter(car => 
+          car.features?.some(feature => 
+            filterState.features?.includes(feature)
+          )
+        );
+      }
+      
+      // Сортировка
+      result = sortCars(result, sortBy);
+      
+      setFilteredCars(result);
+      setLoading(false);
+    }, 500);
     
-    // Фильтр по количеству мест
-    if (filterState.seats.length > 0) {
-      result = result.filter(car => 
-        filterState.seats.includes(car.seats)
-      );
-    }
-    
-    // Фильтр по типу трансмиссии
-    if (filterState.transmission.length > 0) {
-      result = result.filter(car => 
-        filterState.transmission.includes(car.transmission)
-      );
-    }
-    
-    // Поиск по названию
-    if (filterState.search) {
-      const searchTerm = filterState.search.toLowerCase();
-      result = result.filter(car => 
-        car.name.toLowerCase().includes(searchTerm)
-      );
-    }
-    
-    // Фильтр по опциям
-    if (filterState.features && filterState.features.length > 0) {
-      result = result.filter(car => 
-        car.features?.some(feature => 
-          filterState.features?.includes(feature)
-        )
-      );
-    }
-    
-    // Сортировка
-    result = sortCars(result, sortBy);
-    
-    setFilteredCars(result);
-  }, [filterState, sortBy]);
+    return () => clearTimeout(timer);
+  }, [filterState, sortBy, initialLoad]);
 
   // Функция сортировки
   const sortCars = (cars: Car[], sortOption: SortOption): Car[] => {
@@ -319,6 +336,15 @@ const Catalog = () => {
   const handleFilterChange = (newFilters: FilterState) => {
     setFilterState(newFilters);
   };
+  
+  // Загрузка дополнительных автомобилей
+  const handleLoadMore = () => {
+    setVisibleCount(prev => Math.min(prev + 3, filteredCars.length));
+  };
+  
+  // Получаем видимые автомобили
+  const visibleCars = filteredCars.slice(0, visibleCount);
+  const hasMoreToShow = visibleCount < filteredCars.length;
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -371,13 +397,27 @@ const Catalog = () => {
                   <Loader2 className="h-8 w-8 text-primary animate-spin" />
                 </div>
               ) : filteredCars.length > 0 ? (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredCars.map(car => (
-                    <CarCard key={car.id} {...car} />
-                  ))}
-                </div>
+                <>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {visibleCars.map(car => (
+                      <CarCard key={car.id} {...car} />
+                    ))}
+                  </div>
+                  
+                  {hasMoreToShow && (
+                    <div className="mt-12 text-center">
+                      <Button 
+                        variant="outline" 
+                        onClick={handleLoadMore}
+                        className="min-w-[200px]"
+                      >
+                        Показать еще ({filteredCars.length - visibleCount})
+                      </Button>
+                    </div>
+                  )}
+                </>
               ) : (
-                <div className="text-center py-16 px-4">
+                <div className="text-center py-16 px-4 border rounded-lg bg-white">
                   <h3 className="text-lg font-medium text-gray-900 mb-2">
                     Автомобили не найдены
                   </h3>
@@ -387,17 +427,12 @@ const Catalog = () => {
                   <Button onClick={resetFilters}>Сбросить фильтры</Button>
                 </div>
               )}
-              
-              {filteredCars.length > 0 && (
-                <div className="mt-12 text-center">
-                  <Button variant="outline">Показать еще</Button>
-                </div>
-              )}
             </div>
           </div>
         </div>
       </div>
       
+      {/* Подвал */}
       <footer className="bg-gray-900 text-white py-12 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
@@ -425,7 +460,7 @@ const Catalog = () => {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p> 2025 АвтоПрокат. Все права защищены.</p>
+            <p>© 2025 АвтоПрокат. Все права защищены.</p>
           </div>
         </div>
       </footer>
