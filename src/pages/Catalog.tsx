@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -13,6 +12,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import { ActiveFilters, FilterItem } from "@/components/ui/active-filters";
+import { SortingPanel, SortingOption } from "@/components/ui/sorting-panel";
+import { useFilterStorage } from "@/hooks/useFilterStorage";
 
 // Типы сортировки
 type SortOption = 'price-asc' | 'price-desc' | 'name-asc' | 'name-desc';
@@ -101,17 +103,136 @@ const Catalog = () => {
     }
   ];
 
+  // Используем хук для сохранения фильтров в localStorage
+  const [filterState, setFilterState, resetFilters] = useFilterStorage<FilterState>(
+    'catalog-filters',
+    {
+      priceRange: [1000, 10000],
+      categories: [],
+      seats: [],
+      transmission: [],
+      search: "",
+      features: []
+    }
+  );
+
   // Состояния
   const [loading, setLoading] = useState<boolean>(true);
   const [filteredCars, setFilteredCars] = useState<Car[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>('price-asc');
-  const [filters, setFilters] = useState<FilterState>({
-    priceRange: [1000, 10000],
-    categories: [],
-    seats: [],
-    transmission: [],
-    search: ""
-  });
+  
+  // Опции сортировки для компонента SortingPanel
+  const sortingOptions: SortingOption[] = [
+    { id: 'price-asc', label: 'Сначала дешевле', direction: 'asc', field: 'price' },
+    { id: 'price-desc', label: 'Сначала дороже', direction: 'desc', field: 'price' },
+    { id: 'name-asc', label: 'По названию (А-Я)', direction: 'asc', field: 'name' },
+    { id: 'name-desc', label: 'По названию (Я-А)', direction: 'desc', field: 'name' },
+  ];
+
+  // Функция для преобразования фильтров в формат для ActiveFilters
+  const getActiveFilters = (): FilterItem[] => {
+    const result: FilterItem[] = [];
+    
+    // Добавляем фильтр по цене, если он отличается от значений по умолчанию
+    if (filterState.priceRange[0] !== 1000 || filterState.priceRange[1] !== 10000) {
+      result.push({
+        id: 'price-range',
+        type: 'Цена',
+        label: `${filterState.priceRange[0]} ₽ - ${filterState.priceRange[1]} ₽`,
+        value: filterState.priceRange
+      });
+    }
+    
+    // Добавляем фильтры по категориям
+    filterState.categories.forEach((category, index) => {
+      result.push({
+        id: `category-${index}`,
+        type: 'Категория',
+        label: category,
+        value: category
+      });
+    });
+    
+    // Добавляем фильтры по количеству мест
+    filterState.seats.forEach((seat, index) => {
+      result.push({
+        id: `seat-${index}`,
+        type: 'Места',
+        label: `${seat} мест`,
+        value: seat
+      });
+    });
+    
+    // Добавляем фильтры по типу трансмиссии
+    filterState.transmission.forEach((trans, index) => {
+      result.push({
+        id: `trans-${index}`,
+        type: 'Трансмиссия',
+        label: trans,
+        value: trans
+      });
+    });
+    
+    // Добавляем поисковый запрос, если есть
+    if (filterState.search) {
+      result.push({
+        id: 'search',
+        type: 'Поиск',
+        label: filterState.search,
+        value: filterState.search
+      });
+    }
+    
+    // Добавляем выбранные опции, если есть
+    if (filterState.features && filterState.features.length > 0) {
+      filterState.features.forEach((feature, index) => {
+        result.push({
+          id: `feature-${index}`,
+          type: 'Опция',
+          label: feature,
+          value: feature
+        });
+      });
+    }
+    
+    return result;
+  };
+  
+  // Обработчик удаления фильтра
+  const handleRemoveFilter = (id: string) => {
+    const [type, indexStr] = id.split('-');
+    const index = parseInt(indexStr);
+    
+    switch(type) {
+      case 'price':
+        setFilterState({ priceRange: [1000, 10000] });
+        break;
+      case 'category':
+        setFilterState({
+          categories: filterState.categories.filter((_, i) => i !== index)
+        });
+        break;
+      case 'seat':
+        setFilterState({
+          seats: filterState.seats.filter((_, i) => i !== index)
+        });
+        break;
+      case 'trans':
+        setFilterState({
+          transmission: filterState.transmission.filter((_, i) => i !== index)
+        });
+        break;
+      case 'search':
+        setFilterState({ search: "" });
+        break;
+      case 'feature':
+        setFilterState({
+          features: filterState.features ? 
+            filterState.features.filter((_, i) => i !== index) : []
+        });
+        break;
+    }
+  };  
 
   // Эффект для имитации загрузки данных
   useEffect(() => {
@@ -119,53 +240,62 @@ const Catalog = () => {
       setLoading(false);
       setFilteredCars(allCars);
     }, 1000);
-
+    
     return () => clearTimeout(timer);
   }, []);
 
   // Применение фильтров
   useEffect(() => {
     let result = allCars;
-
+    
     // Фильтр по цене
     result = result.filter(car => 
-      car.price >= filters.priceRange[0] && car.price <= filters.priceRange[1]
+      car.price >= filterState.priceRange[0] && car.price <= filterState.priceRange[1]
     );
-
+    
     // Фильтр по категории
-    if (filters.categories.length > 0) {
+    if (filterState.categories.length > 0) {
       result = result.filter(car => 
-        filters.categories.includes(car.category)
+        filterState.categories.includes(car.category)
       );
     }
-
+    
     // Фильтр по количеству мест
-    if (filters.seats.length > 0) {
+    if (filterState.seats.length > 0) {
       result = result.filter(car => 
-        filters.seats.includes(car.seats)
+        filterState.seats.includes(car.seats)
       );
     }
-
+    
     // Фильтр по типу трансмиссии
-    if (filters.transmission.length > 0) {
+    if (filterState.transmission.length > 0) {
       result = result.filter(car => 
-        filters.transmission.includes(car.transmission)
+        filterState.transmission.includes(car.transmission)
       );
     }
-
+    
     // Поиск по названию
-    if (filters.search) {
-      const searchTerm = filters.search.toLowerCase();
+    if (filterState.search) {
+      const searchTerm = filterState.search.toLowerCase();
       result = result.filter(car => 
         car.name.toLowerCase().includes(searchTerm)
       );
     }
-
+    
+    // Фильтр по опциям
+    if (filterState.features && filterState.features.length > 0) {
+      result = result.filter(car => 
+        car.features?.some(feature => 
+          filterState.features?.includes(feature)
+        )
+      );
+    }
+    
     // Сортировка
     result = sortCars(result, sortBy);
-
+    
     setFilteredCars(result);
-  }, [filters, sortBy]);
+  }, [filterState, sortBy]);
 
   // Функция сортировки
   const sortCars = (cars: Car[], sortOption: SortOption): Car[] => {
@@ -187,45 +317,37 @@ const Catalog = () => {
 
   // Обработчик изменения фильтров
   const handleFilterChange = (newFilters: FilterState) => {
-    setFilters(newFilters);
+    setFilterState(newFilters);
   };
-
-  // Обработчик сброса фильтров
-  const handleFilterReset = () => {
-    setFilters({
-      priceRange: [1000, 10000],
-      categories: [],
-      seats: [],
-      transmission: [],
-      search: ""
-    });
-  };
-
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
       
       <div className="bg-gray-100 py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap items-center justify-between">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <h1 className="text-2xl sm:text-3xl font-bold">Каталог автомобилей</h1>
-            <div className="flex items-center space-x-2 mt-4 sm:mt-0">
-              <span className="text-sm text-gray-500">Сортировать:</span>
-              <Select 
-                value={sortBy} 
-                onValueChange={(value) => setSortBy(value as SortOption)}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Сортировка" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="price-asc">Сначала дешевле</SelectItem>
-                  <SelectItem value="price-desc">Сначала дороже</SelectItem>
-                  <SelectItem value="name-asc">По названию (А-Я)</SelectItem>
-                  <SelectItem value="name-desc">По названию (Я-А)</SelectItem>
-                </SelectContent>
-              </Select>
+            
+            {/* Компонент сортировки */}
+            <div className="w-full md:w-auto">
+              <SortingPanel
+                options={sortingOptions}
+                activeSortId={sortBy}
+                onSortChange={(id) => setSortBy(id as SortOption)}
+                variant="minimal"
+                size="sm"
+              />
             </div>
+          </div>
+          
+          {/* Компонент активных фильтров */}
+          <div className="mt-4">
+            <ActiveFilters
+              filters={getActiveFilters()}
+              onRemove={handleRemoveFilter}
+              onReset={resetFilters}
+            />
           </div>
         </div>
       </div>
@@ -237,7 +359,8 @@ const Catalog = () => {
             <div className="md:w-1/4">
               <FilterPanel 
                 onFilterChange={handleFilterChange} 
-                onReset={handleFilterReset} 
+                onReset={resetFilters}
+                filters={filterState}
               />
             </div>
             
@@ -261,7 +384,7 @@ const Catalog = () => {
                   <p className="text-gray-500 mb-6">
                     Попробуйте изменить параметры фильтрации или сбросить фильтры
                   </p>
-                  <Button onClick={handleFilterReset}>Сбросить фильтры</Button>
+                  <Button onClick={resetFilters}>Сбросить фильтры</Button>
                 </div>
               )}
               
@@ -275,7 +398,6 @@ const Catalog = () => {
         </div>
       </div>
       
-      {/* Подвал */}
       <footer className="bg-gray-900 text-white py-12 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
@@ -303,7 +425,7 @@ const Catalog = () => {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>© 2025 АвтоПрокат. Все права защищены.</p>
+            <p> 2025 АвтоПрокат. Все права защищены.</p>
           </div>
         </div>
       </footer>

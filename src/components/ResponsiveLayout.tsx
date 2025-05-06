@@ -1,5 +1,4 @@
-
-import { ReactNode, useState } from "react";
+import { ReactNode, useState } from "react");
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { 
@@ -10,9 +9,13 @@ import {
   LogOut, 
   Menu, 
   X, 
-  ChevronRight
+  ChevronRight,
+  Bell
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
+import { useNotifications } from "@/contexts/NotificationContext";
+import UserNotificationCenter from "@/components/UserNotificationCenter";
 import api from "@/lib/api";
 
 interface ResponsiveLayoutProps {
@@ -23,6 +26,7 @@ const ResponsiveLayout = ({ children }: ResponsiveLayoutProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { unreadCount } = useNotifications();
   
   const isActive = (path: string) => location.pathname === path;
   
@@ -67,15 +71,19 @@ const ResponsiveLayout = ({ children }: ResponsiveLayoutProps) => {
               </Link>
             ))}
             
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleLogout}
-              className="text-gray-600"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Выйти
-            </Button>
+            <div className="flex items-center gap-3">
+              <UserNotificationCenter variant="desktop" />
+              
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleLogout}
+                className="text-gray-600"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Выйти
+              </Button>
+            </div>
           </nav>
         </div>
       </header>
@@ -87,62 +95,66 @@ const ResponsiveLayout = ({ children }: ResponsiveLayoutProps) => {
             AutoPro
           </Link>
           
-          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="h-6 w-6" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-[280px] p-0">
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <span className="text-xl font-bold">Меню</span>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={closeMobileMenu}
-                  >
-                    <X className="h-5 w-5" />
-                  </Button>
-                </div>
-                
-                <nav className="space-y-1">
-                  {navigationItems.map((item) => (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      className={`flex items-center justify-between p-3 rounded-md ${
-                        isActive(item.path)
-                          ? "bg-primary/10 text-primary font-medium"
-                          : "text-gray-600 hover:bg-muted"
-                      }`}
+          <div className="flex items-center gap-2">
+            <UserNotificationCenter variant="mobile" />
+            
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[280px] p-0">
+                <div className="p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <span className="text-xl font-bold">Меню</span>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
                       onClick={closeMobileMenu}
                     >
-                      <div className="flex items-center gap-3">
-                        <item.icon className="h-5 w-5" />
-                        <span>{item.name}</span>
-                      </div>
-                      <ChevronRight className="h-4 w-4" />
-                    </Link>
-                  ))}
-                </nav>
-                
-                <div className="mt-6 pt-6 border-t">
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start"
-                    onClick={() => {
-                      handleLogout();
-                      closeMobileMenu();
-                    }}
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Выйти
-                  </Button>
+                      <X className="h-5 w-5" />
+                    </Button>
+                  </div>
+                  
+                  <nav className="space-y-1">
+                    {navigationItems.map((item) => (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        className={`flex items-center justify-between p-3 rounded-md ${
+                          isActive(item.path)
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "text-gray-600 hover:bg-muted"
+                        }`}
+                        onClick={closeMobileMenu}
+                      >
+                        <div className="flex items-center gap-3">
+                          <item.icon className="h-5 w-5" />
+                          <span>{item.name}</span>
+                        </div>
+                        <ChevronRight className="h-4 w-4" />
+                      </Link>
+                    ))}
+                  </nav>
+                  
+                  <div className="mt-6 pt-6 border-t">
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start"
+                      onClick={() => {
+                        handleLogout();
+                        closeMobileMenu();
+                      }}
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Выйти
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </SheetContent>
-          </Sheet>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </header>
       

@@ -1,9 +1,9 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Catalog from "./pages/Catalog";
@@ -21,56 +21,58 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/catalog" element={<Catalog />} />
-          <Route path="/cars/:id" element={<CarPage />} />
-          <Route path="/profile/bookings" element={<ProfileBookings />} />
-          
-          {/* Открытая страница входа */}
-          <Route path="/admin/login" element={<AdminLogin />} />
-          
-          {/* Защищенные административные маршруты */}
-          <Route path="/admin" element={
-            <AuthGuard>
-              <AdminDashboard />
-            </AuthGuard>
-          } />
-          <Route path="/admin/cars" element={
-            <AuthGuard>
-              <AdminCars />
-            </AuthGuard>
-          } />
-          <Route path="/admin/cars/add" element={
-            <AuthGuard>
-              <CarForm />
-            </AuthGuard>
-          } />
-          <Route path="/admin/cars/edit/:id" element={
-            <AuthGuard>
-              <CarForm />
-            </AuthGuard>
-          } />
-          <Route path="/admin/bookings" element={
-            <AuthGuard>
-              <AdminBookings />
-            </AuthGuard>
-          } />
-          <Route path="/admin/users" element={
-            <AuthGuard>
-              <AdminUsers />
-            </AuthGuard>
-          } />
-          
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <NotificationProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/catalog" element={<Catalog />} />
+            <Route path="/cars/:id" element={<CarPage />} />
+            <Route path="/profile/bookings" element={<ProfileBookings />} />
+            
+            {/* Открытая страница входа */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            
+            {/* Защищенные административные маршруты */}
+            <Route path="/admin" element={
+              <AuthGuard>
+                <AdminDashboard />
+              </AuthGuard>
+            } />
+            <Route path="/admin/cars" element={
+              <AuthGuard>
+                <AdminCars />
+              </AuthGuard>
+            } />
+            <Route path="/admin/cars/add" element={
+              <AuthGuard>
+                <CarForm />
+              </AuthGuard>
+            } />
+            <Route path="/admin/cars/edit/:id" element={
+              <AuthGuard>
+                <CarForm />
+              </AuthGuard>
+            } />
+            <Route path="/admin/bookings" element={
+              <AuthGuard>
+                <AdminBookings />
+              </AuthGuard>
+            } />
+            <Route path="/admin/users" element={
+              <AuthGuard>
+                <AdminUsers />
+              </AuthGuard>
+            } />
+            
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </NotificationProvider>
   </QueryClientProvider>
 );
 
